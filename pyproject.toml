@@ -3,6 +3,17 @@ name = "doodhsync"
 version = "1.0.0"
 description = "A Telegram-based milk tracking application"
 requires-python = ">=3.11,<3.12"
+dependencies = [
+    "alembic",
+    "pydantic-settings",
+    "python-telegram-bot",
+    "sqlalchemy",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

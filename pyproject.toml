@@ -8,6 +8,7 @@ dependencies = [
     "pydantic-settings",
     "python-telegram-bot",
     "sqlalchemy",
+    "tzdata",
 ]
 
 [dependency-groups]

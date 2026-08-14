@@ -5,6 +5,7 @@ from decimal import Decimal
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.models import user
 from app.repositories.milk_repository import MilkRepository
 from app.repositories.user_repository import UserRepository
 
@@ -17,6 +18,12 @@ class RecordMilkResult:
     record_id: int | None = None
     message: str = ""
 
+@dataclass
+class GetMilkResult:
+    found: bool
+    record_id: int | None = None
+    quantity_liters: Decimal | None = None
+    record_date: date | None = None
 
 class MilkService:
     def __init__(self, session: Session):
@@ -91,3 +98,28 @@ class MilkService:
                     "A milk record already exists for this date."
                 ),
             )
+
+    def get_milk_for_date(
+        self,
+        telegram_id: int,
+        record_date: date,
+    ) -> GetMilkResult:
+        user = self.user_repository.get_by_telegram_id(telegram_id)
+
+        if user is None:
+            return GetMilkResult(found=False)
+
+        record = self.milk_repository.get_by_user_and_date(
+            user_id=user.id,
+            record_date=record_date,
+        )
+
+        if record is None:
+            return GetMilkResult(found=False)
+
+        return GetMilkResult(
+            found=True,
+            record_id=record.id,
+            quantity_liters=record.quantity_liters,
+            record_date=record.date,
+        )

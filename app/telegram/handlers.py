@@ -134,3 +134,49 @@ async def milk_quantity_handler(
 
     finally:
         session.close()
+
+
+async def today_handler(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+) -> None:
+    if not is_authorized(update):
+        await reject_unauthorized(update)
+        return
+
+    if update.effective_message is None:
+        return
+
+    user = update.effective_user
+
+    if user is None:
+        return
+
+    record_date = datetime.now(
+        ZoneInfo(settings.timezone)
+    ).date()
+
+    session = SessionLocal()
+
+    try:
+        service = MilkService(session)
+
+        result = service.get_milk_for_date(
+            telegram_id=user.id,
+            record_date=record_date,
+        )
+
+        if not result.found:
+            await update.effective_message.reply_text(
+                "🥛 No milk record found for today."
+            )
+            return
+
+        await update.effective_message.reply_text(
+            f"🥛 Today's milk\n"
+            f"📅 {result.record_date.strftime('%d %b %Y')}\n"
+            f"📦 Quantity: {result.quantity_liters} L"
+        )
+
+    finally:
+        session.close()

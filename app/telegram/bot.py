@@ -10,6 +10,7 @@ from app.telegram.handlers import (
     help_handler,
     milk_quantity_handler,
     start_handler,
+    today_handler,
 )
 
 
@@ -34,6 +35,10 @@ def create_application() -> Application:
             milk_quantity_handler,
         )
     )    
+
+    application.add_handler(
+        CommandHandler("today", today_handler)
+    )
 
     return application
 

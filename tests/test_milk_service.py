@@ -93,3 +93,38 @@ def test_different_dates_are_allowed(session):
 
     assert first_result.success is True
     assert second_result.success is True
+
+
+def test_get_milk_for_date_returns_record(session):
+    service = MilkService(session)
+
+    service.record_milk(
+        telegram_id=123456789,
+        name="Test User",
+        record_date=date(2026, 8, 13),
+        quantity_liters=Decimal("3.25"),
+    )
+
+    result = service.get_milk_for_date(
+        telegram_id=123456789,
+        record_date=date(2026, 8, 13),
+    )
+
+    assert result.found is True
+    assert result.record_id is not None
+    assert result.quantity_liters == Decimal("3.25")
+    assert result.record_date == date(2026, 8, 13)
+
+
+def test_get_milk_for_date_returns_not_found(session):
+    service = MilkService(session)
+
+    result = service.get_milk_for_date(
+        telegram_id=123456789,
+        record_date=date(2026, 8, 13),
+    )
+
+    assert result.found is False
+    assert result.record_id is None
+    assert result.quantity_liters is None
+    assert result.record_date is None

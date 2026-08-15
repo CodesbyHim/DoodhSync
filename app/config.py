@@ -3,7 +3,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     telegram_bot_token: str
-    telegram_allowed_user_id: int
     database_url: str = "sqlite:///./doodhsync.db"
     timezone: str = "Asia/Kolkata"
 

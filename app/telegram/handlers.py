@@ -10,58 +10,66 @@ from decimal import Decimal, InvalidOperation
 from app.database.session import SessionLocal
 from app.services.milk_service import MilkService
 
-def is_authorized(update: Update) -> bool:
-    user = update.effective_user
-
-    if user is None:
-        return False
-
-    return user.id == settings.telegram_allowed_user_id
-
-
-async def reject_unauthorized(
-    update: Update,
-) -> None:
-    if update.effective_message is not None:
-        await update.effective_message.reply_text(
-            "You are not authorized to use DoodhSync."
-        )
-
 
 async def start_handler(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
 ) -> None:
-    if not is_authorized(update):
-        await reject_unauthorized(update)
+    if update.effective_message is None:
         return
 
-    if update.effective_message is not None:
+    user = update.effective_user
+
+    if user is None:
+        return
+
+    session = SessionLocal()
+
+    try:
+        service = MilkService(session)
+
+        service.ensure_user(
+            telegram_id=user.id,
+            name=user.full_name,
+        )
+
         await update.effective_message.reply_text(
-            "Welcome to DoodhSync! 🥛\n\n"
+            "🥛 Welcome to DoodhSync!\n\n"
+            "Your personal milk tracker is ready.\n\n"
             "Send today's milk quantity in liters.\n\n"
             "Example:\n"
-            "3.25"
+            "3.25\n\n"
+            "Commands:\n"
+            "/today - Today's milk\n"
+            "/history - Last 7 days\n"
+            "/month - This month's report\n"
+            "/range - Custom date range\n"
+            "/help - Show help"
         )
+
+    finally:
+        session.close()
 
 
 async def help_handler(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
 ) -> None:
-    if not is_authorized(update):
-        await reject_unauthorized(update)
-        return
-
     if update.effective_message is not None:
         await update.effective_message.reply_text(
-            "DoodhSync Help\n\n"
+            "🥛 DoodhSync Help\n\n"
             "Send a number to record today's milk quantity.\n\n"
             "Example:\n"
             "3.25\n\n"
             "Commands:\n"
             "/start - Start DoodhSync\n"
-            "/help - Show this help message"
+            "/today - Show today's milk\n"
+            "/history - Show the last 7 days\n"
+            "/month - Show this month's report\n"
+            "/range - Show a custom date-range report\n"
+            "/help - Show this help message\n\n"
+            "Example range:\n"
+            "/range 2026-08-01 2026-08-15"
         )
 
 
@@ -69,10 +77,6 @@ async def milk_quantity_handler(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
 ) -> None:
-    if not is_authorized(update):
-        await reject_unauthorized(update)
-        return
-
     if update.effective_message is None:
         return
 
@@ -140,10 +144,6 @@ async def today_handler(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
 ) -> None:
-    if not is_authorized(update):
-        await reject_unauthorized(update)
-        return
-
     if update.effective_message is None:
         return
 
@@ -186,10 +186,6 @@ async def history_handler(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
 ) -> None:
-    if not is_authorized(update):
-        await reject_unauthorized(update)
-        return
-
     if update.effective_message is None:
         return
 
@@ -245,10 +241,6 @@ async def month_handler(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
 ) -> None:
-    if not is_authorized(update):
-        await reject_unauthorized(update)
-        return
-
     if update.effective_message is None:
         return
 
@@ -298,10 +290,6 @@ async def range_handler(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
 ) -> None:
-    if not is_authorized(update):
-        await reject_unauthorized(update)
-        return
-
     if update.effective_message is None:
         return
 

@@ -256,3 +256,22 @@ class MilkService:
             highest_liters=max(quantities),
             lowest_liters=min(quantities),
         )
+
+    def ensure_user(
+        self,
+        telegram_id: int,
+        name: str | None,
+    ):
+        user = self.user_repository.get_by_telegram_id(telegram_id)
+
+        if user is not None:
+            return user
+
+        user = self.user_repository.create(
+            telegram_id=telegram_id,
+            name=name,
+        )
+
+        self.session.commit()
+
+        return user

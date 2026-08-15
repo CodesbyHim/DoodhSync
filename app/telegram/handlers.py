@@ -3,7 +3,7 @@ from telegram.ext import ContextTypes
 
 from app.config import settings
 
-from datetime import datetime
+from datetime import date, datetime
 from zoneinfo import ZoneInfo
 from decimal import Decimal, InvalidOperation
 
@@ -283,6 +283,86 @@ async def month_handler(
 
         await update.effective_message.reply_text(
             f"🥛 {month_name} {current_date.year}\n\n"
+            f"Days recorded: {result.days_recorded}\n"
+            f"Total: {result.total_liters} L\n"
+            f"Average: {result.average_liters:.2f} L/day\n"
+            f"Highest: {result.highest_liters} L\n"
+            f"Lowest: {result.lowest_liters} L"
+        )
+
+    finally:
+        session.close()
+
+
+async def range_handler(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+) -> None:
+    if not is_authorized(update):
+        await reject_unauthorized(update)
+        return
+
+    if update.effective_message is None:
+        return
+
+    user = update.effective_user
+
+    if user is None:
+        return
+
+    if len(context.args) != 2:
+        await update.effective_message.reply_text(
+            "Usage:\n"
+            "/range YYYY-MM-DD YYYY-MM-DD\n\n"
+            "Example:\n"
+            "/range 2026-08-01 2026-08-15"
+        )
+        return
+
+    try:
+        start_date = date.fromisoformat(context.args[0])
+        end_date = date.fromisoformat(context.args[1])
+    except ValueError:
+        await update.effective_message.reply_text(
+            "Invalid date format.\n\n"
+            "Please use YYYY-MM-DD.\n"
+            "Example: /range 2026-08-01 2026-08-15"
+        )
+        return
+
+    if start_date > end_date:
+        await update.effective_message.reply_text(
+            "Start date must not be after end date."
+        )
+        return
+
+    session = SessionLocal()
+
+    try:
+        service = MilkService(session)
+
+        result = service.get_report_for_range(
+            telegram_id=user.id,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+        date_range = (
+            f"{start_date.strftime('%d %b %Y')} → "
+            f"{end_date.strftime('%d %b %Y')}"
+        )
+
+        if not result.found:
+            await update.effective_message.reply_text(
+                f"🥛 Milk Report\n"
+                f"{date_range}\n\n"
+                "No milk records found."
+            )
+            return
+
+        await update.effective_message.reply_text(
+            f"🥛 Milk Report\n"
+            f"{date_range}\n\n"
             f"Days recorded: {result.days_recorded}\n"
             f"Total: {result.total_liters} L\n"
             f"Average: {result.average_liters:.2f} L/day\n"

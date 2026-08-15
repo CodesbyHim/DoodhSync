@@ -261,3 +261,101 @@ def test_get_monthly_report_returns_not_found_when_empty(session):
     assert result.found is False
     assert result.days_recorded == 0
     assert result.total_liters == Decimal("0")
+
+
+def test_get_report_for_range_calculates_summary(session):
+    service = MilkService(session)
+
+    service.record_milk(
+        telegram_id=123456789,
+        name="Test User",
+        record_date=date(2026, 8, 5),
+        quantity_liters=Decimal("3.00"),
+    )
+
+    service.record_milk(
+        telegram_id=123456789,
+        name="Test User",
+        record_date=date(2026, 8, 10),
+        quantity_liters=Decimal("4.00"),
+    )
+
+    service.record_milk(
+        telegram_id=123456789,
+        name="Test User",
+        record_date=date(2026, 8, 15),
+        quantity_liters=Decimal("5.00"),
+    )
+
+    result = service.get_report_for_range(
+        telegram_id=123456789,
+        start_date=date(2026, 8, 1),
+        end_date=date(2026, 8, 15),
+    )
+
+    assert result.found is True
+    assert result.days_recorded == 3
+    assert result.total_liters == Decimal("12.00")
+    assert result.average_liters == Decimal("4.00")
+    assert result.highest_liters == Decimal("5.00")
+    assert result.lowest_liters == Decimal("3.00")
+
+
+def test_get_report_for_range_excludes_records_outside_range(session):
+    service = MilkService(session)
+
+    service.record_milk(
+        telegram_id=123456789,
+        name="Test User",
+        record_date=date(2026, 7, 31),
+        quantity_liters=Decimal("10.00"),
+    )
+
+    service.record_milk(
+        telegram_id=123456789,
+        name="Test User",
+        record_date=date(2026, 8, 10),
+        quantity_liters=Decimal("3.00"),
+    )
+
+    service.record_milk(
+        telegram_id=123456789,
+        name="Test User",
+        record_date=date(2026, 8, 21),
+        quantity_liters=Decimal("8.00"),
+    )
+
+    result = service.get_report_for_range(
+        telegram_id=123456789,
+        start_date=date(2026, 8, 1),
+        end_date=date(2026, 8, 20),
+    )
+
+    assert result.found is True
+    assert result.days_recorded == 1
+    assert result.total_liters == Decimal("3.00")
+
+
+def test_get_report_for_range_rejects_invalid_range(session):
+    service = MilkService(session)
+
+    with pytest.raises(ValueError, match="Start date must not be after end date"):
+        service.get_report_for_range(
+            telegram_id=123456789,
+            start_date=date(2026, 8, 20),
+            end_date=date(2026, 8, 1),
+        )
+
+
+def test_get_report_for_range_returns_not_found_when_empty(session):
+    service = MilkService(session)
+
+    result = service.get_report_for_range(
+        telegram_id=123456789,
+        start_date=date(2026, 8, 1),
+        end_date=date(2026, 8, 15),
+    )
+
+    assert result.found is False
+    assert result.days_recorded == 0
+    assert result.total_liters == Decimal("0")

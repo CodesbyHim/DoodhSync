@@ -43,6 +43,18 @@ class MonthlyMilkReport:
     highest_liters: Decimal = Decimal("0")
     lowest_liters: Decimal = Decimal("0")
 
+
+@dataclass
+class MilkReport:
+    found: bool
+    start_date: date
+    end_date: date
+    days_recorded: int = 0
+    total_liters: Decimal = Decimal("0")
+    average_liters: Decimal = Decimal("0")
+    highest_liters: Decimal = Decimal("0")
+    lowest_liters: Decimal = Decimal("0")
+
 class MilkService:
     def __init__(self, session: Session):
         self.session = session
@@ -171,15 +183,6 @@ class MilkService:
         year: int,
         month: int,
     ) -> MonthlyMilkReport:
-        user = self.user_repository.get_by_telegram_id(telegram_id)
-
-        if user is None:
-            return MonthlyMilkReport(
-                found=False,
-                year=year,
-                month=month,
-            )
-
         start_date = date(year, month, 1)
 
         if month == 12:
@@ -189,6 +192,42 @@ class MilkService:
 
         end_date = end_date - timedelta(days=1)
 
+        report = self.get_report_for_range(
+            telegram_id=telegram_id,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+        return MonthlyMilkReport(
+            found=report.found,
+            year=year,
+            month=month,
+            days_recorded=report.days_recorded,
+            total_liters=report.total_liters,
+            average_liters=report.average_liters,
+            highest_liters=report.highest_liters,
+            lowest_liters=report.lowest_liters,
+        )
+
+
+    def get_report_for_range(
+        self,
+        telegram_id: int,
+        start_date: date,
+        end_date: date,
+    ) -> MilkReport:
+        if start_date > end_date:
+            raise ValueError("Start date must not be after end date.")
+
+        user = self.user_repository.get_by_telegram_id(telegram_id)
+
+        if user is None:
+            return MilkReport(
+                found=False,
+                start_date=start_date,
+                end_date=end_date,
+            )
+
         records = self.milk_repository.get_by_user_and_date_range(
             user_id=user.id,
             start_date=start_date,
@@ -196,25 +235,24 @@ class MilkService:
         )
 
         if not records:
-            return MonthlyMilkReport(
+            return MilkReport(
                 found=False,
-                year=year,
-                month=month,
+                start_date=start_date,
+                end_date=end_date,
             )
 
         quantities = [record.quantity_liters for record in records]
 
         total_liters = sum(quantities, Decimal("0"))
         days_recorded = len(records)
-        average_liters = total_liters / Decimal(days_recorded)
 
-        return MonthlyMilkReport(
+        return MilkReport(
             found=True,
-            year=year,
-            month=month,
+            start_date=start_date,
+            end_date=end_date,
             days_recorded=days_recorded,
             total_liters=total_liters,
-            average_liters=average_liters,
+            average_liters=total_liters / Decimal(days_recorded),
             highest_liters=max(quantities),
             lowest_liters=min(quantities),
         )

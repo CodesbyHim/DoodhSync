@@ -23,6 +23,16 @@ from app.telegram.handlers import (
     today_handler,
 )
 
+from app.telegram.handlers import (
+    help_handler,
+    history_handler,
+    milk_quantity_handler,
+    month_handler,
+    range_handler,
+    start_handler,
+    today_handler,
+)
+
 def create_application() -> Application:
     application = (
         Application.builder()
@@ -55,6 +65,10 @@ def create_application() -> Application:
     
     application.add_handler(
         CommandHandler("month", month_handler)
+    )
+
+    application.add_handler(
+        CommandHandler("range", range_handler)
     )
 
     return application

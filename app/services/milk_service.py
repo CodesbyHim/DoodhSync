@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 from sqlalchemy.exc import IntegrityError
@@ -30,6 +30,18 @@ class GetMilkResult:
 class GetRecentMilkResult:
     found: bool
     records: list[MilkRecord]
+
+
+@dataclass
+class MonthlyMilkReport:
+    found: bool
+    year: int
+    month: int
+    days_recorded: int = 0
+    total_liters: Decimal = Decimal("0")
+    average_liters: Decimal = Decimal("0")
+    highest_liters: Decimal = Decimal("0")
+    lowest_liters: Decimal = Decimal("0")
 
 class MilkService:
     def __init__(self, session: Session):
@@ -151,4 +163,58 @@ class MilkService:
         return GetRecentMilkResult(
             found=bool(records),
             records=records,
+        )
+
+    def get_monthly_report(
+        self,
+        telegram_id: int,
+        year: int,
+        month: int,
+    ) -> MonthlyMilkReport:
+        user = self.user_repository.get_by_telegram_id(telegram_id)
+
+        if user is None:
+            return MonthlyMilkReport(
+                found=False,
+                year=year,
+                month=month,
+            )
+
+        start_date = date(year, month, 1)
+
+        if month == 12:
+            end_date = date(year + 1, 1, 1)
+        else:
+            end_date = date(year, month + 1, 1)
+
+        end_date = end_date - timedelta(days=1)
+
+        records = self.milk_repository.get_by_user_and_date_range(
+            user_id=user.id,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+        if not records:
+            return MonthlyMilkReport(
+                found=False,
+                year=year,
+                month=month,
+            )
+
+        quantities = [record.quantity_liters for record in records]
+
+        total_liters = sum(quantities, Decimal("0"))
+        days_recorded = len(records)
+        average_liters = total_liters / Decimal(days_recorded)
+
+        return MonthlyMilkReport(
+            found=True,
+            year=year,
+            month=month,
+            days_recorded=days_recorded,
+            total_liters=total_liters,
+            average_liters=average_liters,
+            highest_liters=max(quantities),
+            lowest_liters=min(quantities),
         )

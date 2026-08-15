@@ -239,3 +239,56 @@ async def history_handler(
 
     finally:
         session.close()
+
+
+async def month_handler(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+) -> None:
+    if not is_authorized(update):
+        await reject_unauthorized(update)
+        return
+
+    if update.effective_message is None:
+        return
+
+    user = update.effective_user
+
+    if user is None:
+        return
+
+    current_date = datetime.now(
+        ZoneInfo(settings.timezone)
+    ).date()
+
+    session = SessionLocal()
+
+    try:
+        service = MilkService(session)
+
+        result = service.get_monthly_report(
+            telegram_id=user.id,
+            year=current_date.year,
+            month=current_date.month,
+        )
+
+        month_name = current_date.strftime("%B")
+
+        if not result.found:
+            await update.effective_message.reply_text(
+                f"🥛 {month_name} {current_date.year}\n\n"
+                "No milk records found for this month."
+            )
+            return
+
+        await update.effective_message.reply_text(
+            f"🥛 {month_name} {current_date.year}\n\n"
+            f"Days recorded: {result.days_recorded}\n"
+            f"Total: {result.total_liters} L\n"
+            f"Average: {result.average_liters:.2f} L/day\n"
+            f"Highest: {result.highest_liters} L\n"
+            f"Lowest: {result.lowest_liters} L"
+        )
+
+    finally:
+        session.close()

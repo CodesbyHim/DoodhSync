@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session
 
 from app.models.milk_record import MilkRecord
 
-
 class MilkRepository:
     def __init__(self, session: Session):
         self.session = session
@@ -33,6 +32,24 @@ class MilkRepository:
             .where(MilkRecord.user_id == user_id)
             .order_by(MilkRecord.date.desc())
             .limit(limit)
+        )
+
+        return list(self.session.scalars(statement).all())
+
+    def get_by_user_and_date_range(
+        self,
+        user_id: int,
+        start_date: date,
+        end_date: date,
+    ) -> list[MilkRecord]:
+        statement = (
+            select(MilkRecord)
+            .where(
+                MilkRecord.user_id == user_id,
+                MilkRecord.date >= start_date,
+                MilkRecord.date <= end_date,
+            )
+            .order_by(MilkRecord.date.asc())
         )
 
         return list(self.session.scalars(statement).all())

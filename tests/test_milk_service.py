@@ -179,3 +179,85 @@ def test_get_recent_milk_returns_not_found_for_unknown_user(session):
 
     assert result.found is False
     assert result.records == []
+
+
+def test_get_monthly_report_calculates_summary(session):
+    service = MilkService(session)
+
+    service.record_milk(
+        telegram_id=123456789,
+        name="Test User",
+        record_date=date(2026, 8, 1),
+        quantity_liters=Decimal("3.00"),
+    )
+
+    service.record_milk(
+        telegram_id=123456789,
+        name="Test User",
+        record_date=date(2026, 8, 10),
+        quantity_liters=Decimal("4.00"),
+    )
+
+    service.record_milk(
+        telegram_id=123456789,
+        name="Test User",
+        record_date=date(2026, 8, 20),
+        quantity_liters=Decimal("5.00"),
+    )
+
+    result = service.get_monthly_report(
+        telegram_id=123456789,
+        year=2026,
+        month=8,
+    )
+
+    assert result.found is True
+    assert result.year == 2026
+    assert result.month == 8
+    assert result.days_recorded == 3
+    assert result.total_liters == Decimal("12.00")
+    assert result.average_liters == Decimal("4.00")
+    assert result.highest_liters == Decimal("5.00")
+    assert result.lowest_liters == Decimal("3.00")
+
+
+def test_get_monthly_report_ignores_other_months(session):
+    service = MilkService(session)
+
+    service.record_milk(
+        telegram_id=123456789,
+        name="Test User",
+        record_date=date(2026, 7, 31),
+        quantity_liters=Decimal("10.00"),
+    )
+
+    service.record_milk(
+        telegram_id=123456789,
+        name="Test User",
+        record_date=date(2026, 8, 1),
+        quantity_liters=Decimal("3.00"),
+    )
+
+    result = service.get_monthly_report(
+        telegram_id=123456789,
+        year=2026,
+        month=8,
+    )
+
+    assert result.found is True
+    assert result.days_recorded == 1
+    assert result.total_liters == Decimal("3.00")
+
+
+def test_get_monthly_report_returns_not_found_when_empty(session):
+    service = MilkService(session)
+
+    result = service.get_monthly_report(
+        telegram_id=123456789,
+        year=2026,
+        month=8,
+    )
+
+    assert result.found is False
+    assert result.days_recorded == 0
+    assert result.total_liters == Decimal("0")

@@ -180,3 +180,62 @@ async def today_handler(
 
     finally:
         session.close()
+
+
+async def history_handler(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+) -> None:
+    if not is_authorized(update):
+        await reject_unauthorized(update)
+        return
+
+    if update.effective_message is None:
+        return
+
+    user = update.effective_user
+
+    if user is None:
+        return
+
+    session = SessionLocal()
+
+    try:
+        service = MilkService(session)
+
+        result = service.get_recent_milk(
+            telegram_id=user.id,
+            limit=7,
+        )
+
+        if not result.found:
+            await update.effective_message.reply_text(
+                "🥛 No milk records found."
+            )
+            return
+
+        lines = ["🥛 Milk History", ""]
+
+        total = Decimal("0")
+
+        for record in result.records:
+            quantity = record.quantity_liters
+            total += quantity
+
+            lines.append(
+                f"{record.date.strftime('%d %b')} — {quantity} L"
+            )
+
+        lines.extend(
+            [
+                "",
+                f"Total: {total} L",
+            ]
+        )
+
+        await update.effective_message.reply_text(
+            "\n".join(lines)
+        )
+
+    finally:
+        session.close()

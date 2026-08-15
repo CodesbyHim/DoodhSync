@@ -128,3 +128,54 @@ def test_get_milk_for_date_returns_not_found(session):
     assert result.record_id is None
     assert result.quantity_liters is None
     assert result.record_date is None
+
+
+def test_get_recent_milk_returns_records_newest_first(session):
+    service = MilkService(session)
+
+    service.record_milk(
+        telegram_id=123456789,
+        name="Test User",
+        record_date=date(2026, 8, 11),
+        quantity_liters=Decimal("3.25"),
+    )
+
+    service.record_milk(
+        telegram_id=123456789,
+        name="Test User",
+        record_date=date(2026, 8, 13),
+        quantity_liters=Decimal("4.10"),
+    )
+
+    service.record_milk(
+        telegram_id=123456789,
+        name="Test User",
+        record_date=date(2026, 8, 12),
+        quantity_liters=Decimal("3.75"),
+    )
+
+    result = service.get_recent_milk(
+        telegram_id=123456789,
+        limit=7,
+    )
+
+    assert result.found is True
+    assert len(result.records) == 3
+
+    assert result.records[0].date == date(2026, 8, 13)
+    assert result.records[0].quantity_liters == Decimal("4.10")
+
+    assert result.records[1].date == date(2026, 8, 12)
+    assert result.records[2].date == date(2026, 8, 11)
+
+
+def test_get_recent_milk_returns_not_found_for_unknown_user(session):
+    service = MilkService(session)
+
+    result = service.get_recent_milk(
+        telegram_id=999999999,
+        limit=7,
+    )
+
+    assert result.found is False
+    assert result.records == []

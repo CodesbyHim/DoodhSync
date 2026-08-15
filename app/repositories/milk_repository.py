@@ -23,6 +23,20 @@ class MilkRepository:
 
         return self.session.scalar(statement)
 
+    def get_recent_by_user(
+        self,
+        user_id: int,
+        limit: int = 7,
+    ) -> list[MilkRecord]:
+        statement = (
+            select(MilkRecord)
+            .where(MilkRecord.user_id == user_id)
+            .order_by(MilkRecord.date.desc())
+            .limit(limit)
+        )
+
+        return list(self.session.scalars(statement).all())
+
     def create(
         self,
         user_id: int,

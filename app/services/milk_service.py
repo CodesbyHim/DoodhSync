@@ -9,6 +9,7 @@ from app.models import user
 from app.repositories.milk_repository import MilkRepository
 from app.repositories.user_repository import UserRepository
 
+from app.models.milk_record import MilkRecord
 
 @dataclass
 class RecordMilkResult:
@@ -24,6 +25,11 @@ class GetMilkResult:
     record_id: int | None = None
     quantity_liters: Decimal | None = None
     record_date: date | None = None
+
+@dataclass
+class GetRecentMilkResult:
+    found: bool
+    records: list[MilkRecord]
 
 class MilkService:
     def __init__(self, session: Session):
@@ -122,4 +128,27 @@ class MilkService:
             record_id=record.id,
             quantity_liters=record.quantity_liters,
             record_date=record.date,
+        )
+
+    def get_recent_milk(
+        self,
+        telegram_id: int,
+        limit: int = 7,
+    ) -> GetRecentMilkResult:
+        user = self.user_repository.get_by_telegram_id(telegram_id)
+
+        if user is None:
+            return GetRecentMilkResult(
+                found=False,
+                records=[],
+            )
+
+        records = self.milk_repository.get_recent_by_user(
+            user_id=user.id,
+            limit=limit,
+        )
+
+        return GetRecentMilkResult(
+            found=bool(records),
+            records=records,
         )

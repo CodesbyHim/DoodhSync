@@ -8,6 +8,7 @@ from telegram.ext import (
 from app.config import settings
 from app.telegram.handlers import (
     help_handler,
+    history_handler,
     milk_quantity_handler,
     start_handler,
     today_handler,
@@ -39,6 +40,10 @@ def create_application() -> Application:
     application.add_handler(
         CommandHandler("today", today_handler)
     )
+    
+    application.add_handler(
+        CommandHandler("history", history_handler)
+    )   
 
     return application
 

@@ -5,10 +5,13 @@ description = "A Telegram-based milk tracking application"
 requires-python = ">=3.11,<3.12"
 dependencies = [
     "alembic",
+    "fastapi>=0.141.1",
+    "psycopg[binary]>=3.3.4",
     "pydantic-settings",
     "python-telegram-bot",
     "sqlalchemy",
     "tzdata",
+    "uvicorn>=0.52.3",
 ]
 
 [dependency-groups]

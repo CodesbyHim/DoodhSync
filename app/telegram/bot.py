@@ -22,6 +22,7 @@ def create_application() -> Application:
     application = (
         Application.builder()
         .token(settings.telegram_bot_token)
+        .updater(None)
         .build()
     )
 

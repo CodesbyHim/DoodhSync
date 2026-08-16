@@ -5,7 +5,6 @@ from decimal import Decimal
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.models import user
 from app.repositories.milk_repository import MilkRepository
 from app.repositories.user_repository import UserRepository
 
@@ -18,6 +17,7 @@ class RecordMilkResult:
     duplicate: bool
     record_id: int | None = None
     message: str = ""
+
 
 @dataclass
 class GetMilkResult:

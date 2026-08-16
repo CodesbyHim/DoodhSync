@@ -1,10 +1,11 @@
 from datetime import date
 from decimal import Decimal
 
-from sqlalchemy import delete, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.milk_record import MilkRecord
+
 
 class MilkRepository:
     def __init__(self, session: Session):

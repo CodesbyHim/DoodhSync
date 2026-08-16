@@ -6,22 +6,6 @@ from telegram.ext import (
 )
 
 from app.config import settings
-from app.telegram.handlers import (
-    help_handler,
-    history_handler,
-    milk_quantity_handler,
-    start_handler,
-    today_handler,
-)
-
-from app.telegram.handlers import (
-    help_handler,
-    history_handler,
-    milk_quantity_handler,
-    month_handler,
-    start_handler,
-    today_handler,
-)
 
 from app.telegram.handlers import (
     help_handler,
@@ -31,6 +15,7 @@ from app.telegram.handlers import (
     range_handler,
     start_handler,
     today_handler,
+    error_handler,
 )
 
 def create_application() -> Application:
@@ -70,6 +55,8 @@ def create_application() -> Application:
     application.add_handler(
         CommandHandler("range", range_handler)
     )
+
+    application.add_error_handler(error_handler)
 
     return application
 

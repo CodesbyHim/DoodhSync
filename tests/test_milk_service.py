@@ -523,3 +523,40 @@ def test_ensure_user_does_not_create_duplicate_user(session):
     )
 
     assert first_user.id == second_user.id
+
+
+def test_users_have_isolated_milk_records(session):
+    service = MilkService(session)
+
+    user_a = service.record_milk(
+        telegram_id=111111111,
+        name="User A",
+        record_date=date(2026, 8, 16),
+        quantity_liters=Decimal("3.25"),
+    )
+
+    user_b = service.record_milk(
+        telegram_id=222222222,
+        name="User B",
+        record_date=date(2026, 8, 16),
+        quantity_liters=Decimal("5.50"),
+    )
+
+    assert user_a.success is True
+    assert user_b.success is True
+
+    result_a = service.get_milk_for_date(
+        telegram_id=111111111,
+        record_date=date(2026, 8, 16),
+    )
+
+    result_b = service.get_milk_for_date(
+        telegram_id=222222222,
+        record_date=date(2026, 8, 16),
+    )
+
+    assert result_a.found is True
+    assert result_b.found is True
+
+    assert result_a.quantity_liters == Decimal("3.25")
+    assert result_b.quantity_liters == Decimal("5.50")

@@ -1,3 +1,5 @@
+import logging
+
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -9,6 +11,9 @@ from decimal import Decimal, InvalidOperation
 
 from app.database.session import SessionLocal
 from app.services.milk_service import MilkService
+
+
+logger = logging.getLogger(__name__)
 
 
 async def start_handler(
@@ -360,3 +365,18 @@ async def range_handler(
 
     finally:
         session.close()
+
+
+async def error_handler(
+    update: object,
+    context: ContextTypes.DEFAULT_TYPE,
+) -> None:
+    logger.exception(
+        "Exception while processing Telegram update",
+        exc_info=context.error,
+    )
+
+    if update is not None and update.effective_message is not None:
+        await update.effective_message.reply_text(
+            "Sorry, something went wrong. Please try again."
+        )
